@@ -7,29 +7,32 @@ import sys
 import locale
 import win32com.client as win32
 from time import sleep
+from __builtin__ import True
 
 
 ReportDayOfWeek = "09/21/15"
 SubjectPrefix   = "[주간계획]".decode('cp949')
-PostBox         = "sslee@ubiquoss.com"
+DefaultPostBox  = "sslee@ubiquoss.com"
+DefaultDisplay  = False
+DefaultOpenFile = "d:\\tmp\\aaa.docx"
 
 
-ListOfMyTeam = []
+AllTeamMember = {}
 
-def CreateTeamMemberListbyFile(DisplayOn = True):
+def CreateTeamMemberListbyFile(DisplayOn = DefaultDisplay):
     try:
         with open('MemberOfTeam.txt', 'r') as  MemberOfTeam_file:
             for line in MemberOfTeam_file:
-                if(DisplayOn):
-                    print line
-                ListOfMyTeam.append(line.decode('cp949'))
+                (number, name, rank) = line.decode('cp949').split()
+                AllTeamMember[number] = (name, rank)
 
     except IOError as err:
         print('File error: ' + str(err))
 
     if(DisplayOn):
-        for list in ListOfMyTeam:
-            print list
+        for TeamMember in sorted(AllTeamMember.keys()):
+            print TeamMember + AllTeamMember[TeamMember][0] + AllTeamMember[TeamMember][1]
+    return
 
 
 def DisplayOfficeOutlookItem(msg):
@@ -45,55 +48,86 @@ def DisplayOfficeOutlookItem(msg):
     return
 
 
-AllMemberOutlookMessage = {}
-
-def OfficeOutlook(PersonalFolderName = "주간업무관련", AppClose = False):
-    app = win32.Dispatch("Outlook.Application")
-    NameSpace = app.GetNamespace("MAPI")
+def OpenMailBox_OfficeOutlook(PostBox = DefaultPostBox, PersonalFolderName = "주간업무관련"):
+    global OfficeOutlook
+    OfficeOutlook = win32.Dispatch("Outlook.Application")
+    NameSpace = OfficeOutlook.GetNamespace("MAPI")
     PersonalFolder = NameSpace.Folders.Item(PostBox)
-
     Inbox = PersonalFolder.Folders.Item(PersonalFolderName)
 
-    for i in range(len(Inbox.Items), len(Inbox.Items)-12, -1):
+    return Inbox
+
+
+def SearchMailBox_OfficeOutlook(Inbox, SearchUser, SearchDate = ReportDayOfWeek,
+                                SearchSubject = SubjectPrefix, DisplayOn = DefaultDisplay):
+    if Inbox == None:
+        return False
+
+    for i in range(len(Inbox.Items), len(Inbox.Items)-50, -1):
         msg = Inbox.Items.Item(i)
         (ReceivedDate, ReceivedTime) = str(msg.ReceivedTime).split(' ', 1)
-        if ReceivedDate != ReportDayOfWeek:
+        if ReceivedDate != SearchDate:
+            continue
+        if SearchSubject not in msg.Subject:
+            continue
+        if not msg.Subject.startswith(SearchSubject):
             continue
 
-        if SubjectPrefix not in msg.Subject:
-            continue
-        if msg.Subject.startswith(SubjectPrefix):
-            DisplayOfficeOutlookItem(msg)
-        else:
-            print "Do Not Start Prefix"
-
-    if(AppClose):
-        app.Application.Quit()
-
-    return msg.Body
+        if SearchUser in msg.Subject:
+            if(DisplayOn):
+                DisplayOfficeOutlookItem(msg)
+            return msg
+    return
 
 
-def OfficeWord(MSGBody, AppClose = False):
-    word = win32.gencache.EnsureDispatch('Word.Application')
-    word.Visible = 1
-    sleep(1)
-    doc = word.Documents.Open("d:\\tmp\\aaa.docx")
-    tbl = doc.Tables.Item(1)
+def OpenDocx_OfficeWord(OpenFile = DefaultOpenFile):
+    global OfficeWord
+    OfficeWord = win32.gencache.EnsureDispatch('Word.Application')
+    OfficeWord.Visible = 1
+    OpenDocx = OfficeWord.Documents.Open(OpenFile)
     sleep(1)
 
-    tbl.Cell(2,2).Range.Delete(1, 1)
-    sleep(2)
-    tbl.Cell(2,2).Range.InsertAfter(MSGBody)
-    sleep(2)
+    return OpenDocx
 
-    doc.Close()
+    
+def WriteDocx_OfficeWord(OpenDocx, TeamMember, MailMsg, OpenFile = DefaultOpenFile):
+    global AllTeamMember
+
+    if MailMsg == None:
+        return
+    
+    index = int(TeamMember) + 1
+    MemberName = AllTeamMember[TeamMember][0] + " " + AllTeamMember[TeamMember][1]
+    
+    if OpenDocx == None:
+        OpenDocx = OpenDocx_OfficeWord(OpenFile)
+
+    tbl = OpenDocx.Tables.Item(1)
     sleep(1)
-    word.Quit()
+
+    tbl.Cell(index, 1).Range.Delete(1, 1)
+    tbl.Cell(index, 2).Range.Delete(1, 1)
+    sleep(1)
+    tbl.Cell(index, 1).Range.InsertAfter(MemberName)
+    tbl.Cell(index, 2).Range.InsertAfter(MailMsg.Body)
+    sleep(1)
+    return
 
 
 if __name__ == '__main__':
-    CreateTeamMemberListbyFile(DisplayOn=False)
-#    MessageBody = OfficeOutlook()
-#    OfficeWord(MessageBody)
+    CreateTeamMemberListbyFile()
+    MailBox = OpenMailBox_OfficeOutlook()
+    Docx    = OpenDocx_OfficeWord()
+    
+    for TeamMember in sorted(AllTeamMember.keys()):
+        MailMessage = SearchMailBox_OfficeOutlook(MailBox, AllTeamMember[TeamMember][0])
+        if(MailMessage):
+            DisplayOfficeOutlookItem(MailMessage)
+            WriteDocx_OfficeWord(Docx, TeamMember, MailMessage)
+
+    Docx.Close()
+    sleep(1)
+    OfficeWord.Quit()
+#    OfficeOutlook.Application.Quit()
 
 # End of File
