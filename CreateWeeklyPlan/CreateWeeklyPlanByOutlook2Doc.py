@@ -14,6 +14,24 @@ SubjectPrefix   = "[주간계획]".decode('cp949')
 PostBox         = "sslee@ubiquoss.com"
 
 
+ListOfMyTeam = []
+
+def CreateTeamMemberListbyFile(DisplayOn = True):
+    try:
+        with open('MemberOfTeam.txt', 'r') as  MemberOfTeam_file:
+            for line in MemberOfTeam_file:
+                if(DisplayOn):
+                    print line
+                ListOfMyTeam.append(line.decode('cp949'))
+
+    except IOError as err:
+        print('File error: ' + str(err))
+
+    if(DisplayOn):
+        for list in ListOfMyTeam:
+            print list
+
+
 def DisplayOfficeOutlookItem(msg):
     print 'Subject: ' + msg.Subject
     print 'SenderName: ' + msg.SenderName
@@ -27,6 +45,8 @@ def DisplayOfficeOutlookItem(msg):
     return
 
 
+AllMemberOutlookMessage = {}
+
 def OfficeOutlook(PersonalFolderName = "주간업무관련", AppClose = False):
     app = win32.Dispatch("Outlook.Application")
     NameSpace = app.GetNamespace("MAPI")
@@ -36,8 +56,8 @@ def OfficeOutlook(PersonalFolderName = "주간업무관련", AppClose = False):
 
     for i in range(len(Inbox.Items), len(Inbox.Items)-12, -1):
         msg = Inbox.Items.Item(i)
-        ReceivedDate = str(msg.ReceivedTime).split(' ', 1)
-        if ReceivedDate[0] != ReportDayOfWeek:
+        (ReceivedDate, ReceivedTime) = str(msg.ReceivedTime).split(' ', 1)
+        if ReceivedDate != ReportDayOfWeek:
             continue
 
         if SubjectPrefix not in msg.Subject:
@@ -72,7 +92,8 @@ def OfficeWord(MSGBody, AppClose = False):
 
 
 if __name__ == '__main__':
-    MessageBody = OfficeOutlook()
-    OfficeWord(MessageBody)
+    CreateTeamMemberListbyFile(DisplayOn=False)
+#    MessageBody = OfficeOutlook()
+#    OfficeWord(MessageBody)
 
 # End of File
