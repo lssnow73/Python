@@ -10,11 +10,11 @@ from time import sleep
 from __builtin__ import True
 
 
-ReportDayOfWeek = "09/21/15"
+ReportDayOfWeek = "10/19/15"
 SubjectPrefix   = "[주간계획]".decode('cp949')
 DefaultPostBox  = "sslee@ubiquoss.com"
 DefaultDisplay  = False
-DefaultOpenFile = "d:\\tmp\\aaa.docx"
+DefaultOpenFile = "D:\\회사업무_기타\\주간업무수행_2015\\SW2G_주간업무수행 양식-43주차_151019-SW5.docx"
 
 
 AllTeamMember = {}
@@ -35,7 +35,7 @@ def CreateTeamMemberListbyFile(DisplayOn = DefaultDisplay):
     return
 
 
-def DisplayOfficeOutlookItem(msg):
+def DisplayItem_OfficeOutlook(msg):
     print 'Subject: ' + msg.Subject
     print 'SenderName: ' + msg.SenderName
     print 'SenderEmailAddress: ' + msg.SenderEmailAddress
@@ -75,7 +75,7 @@ def SearchMailBox_OfficeOutlook(Inbox, SearchUser, SearchDate = ReportDayOfWeek,
 
         if SearchUser in msg.Subject:
             if(DisplayOn):
-                DisplayOfficeOutlookItem(msg)
+                DisplayItem_OfficeOutlook(msg)
             return msg
     return
 
@@ -89,7 +89,18 @@ def OpenDocx_OfficeWord(OpenFile = DefaultOpenFile):
 
     return OpenDocx
 
+
+def ChangeMailMessageBody_OfficeWord(MailMsgBody):
+    if MailMsgBody == None:
+        return None
     
+    FormattedBody = MailMsgBody.replace(u'굕a1', u'굑f0a1')
+    FormattedBody = MailMsgBody.replace(u'굕a0', ' ')
+    FormattedBody = FormattedBody.replace(u'굕f0', u'굑f0f0')
+
+    return FormattedBody
+
+
 def WriteDocx_OfficeWord(OpenDocx, TeamMember, MailMsg, OpenFile = DefaultOpenFile):
     global AllTeamMember
 
@@ -103,14 +114,25 @@ def WriteDocx_OfficeWord(OpenDocx, TeamMember, MailMsg, OpenFile = DefaultOpenFi
         OpenDocx = OpenDocx_OfficeWord(OpenFile)
 
     tbl = OpenDocx.Tables.Item(1)
-    sleep(1)
 
     tbl.Cell(index, 1).Range.Delete(1, 1)
     tbl.Cell(index, 2).Range.Delete(1, 1)
-    sleep(1)
+    sleep(2)
     tbl.Cell(index, 1).Range.InsertAfter(MemberName)
-    tbl.Cell(index, 2).Range.InsertAfter(MailMsg.Body)
-    sleep(1)
+    sleep(2)
+    FormattedBody = ChangeMailMessageBody_OfficeWord(MailMsg.Body)
+    tbl.Cell(index, 2).Range.InsertAfter(FormattedBody)
+    #sleep(2)
+    """
+    tbl.Cell(index, 2).Range.Font.Name = "맑은 고딕"
+    tbl.Cell(index, 2).Range.Font.Bold = 1
+    tbl.Cell(index, 2).Range.Font.Size = 13
+    tbl.Cell(index, 2).Range.Characters.Count
+    tbl.Cell(index, 2).Range.FormattedText = FormattedBody
+    sleep(2)
+    #    tbl.Cell(index, 2).Range.Find.Execute('U3204')
+    #    print unicode(tbl.Cell(index, 2).Range.Text[0:1])
+    """
     return
 
 
@@ -118,12 +140,19 @@ if __name__ == '__main__':
     CreateTeamMemberListbyFile()
     MailBox = OpenMailBox_OfficeOutlook()
     Docx    = OpenDocx_OfficeWord()
-    
+
     for TeamMember in sorted(AllTeamMember.keys()):
         MailMessage = SearchMailBox_OfficeOutlook(MailBox, AllTeamMember[TeamMember][0])
         if(MailMessage):
-            DisplayOfficeOutlookItem(MailMessage)
+            DisplayItem_OfficeOutlook(MailMessage)
             WriteDocx_OfficeWord(Docx, TeamMember, MailMessage)
+
+    """
+    TeamMember = "01"
+    MailMessage = SearchMailBox_OfficeOutlook(MailBox, AllTeamMember[TeamMember][0])
+    if(MailMessage):
+        WriteDocx_OfficeWord(Docx, TeamMember, MailMessage)
+    """
 
     Docx.Close()
     sleep(1)
