@@ -10,11 +10,11 @@ from time import sleep
 from __builtin__ import True
 
 
-ReportDayOfWeek = "10/19/15"
+ReportDayOfWeek = "11/02/15"
 SubjectPrefix   = "[주간계획]".decode('cp949')
 DefaultPostBox  = "sslee@ubiquoss.com"
 DefaultDisplay  = False
-DefaultOpenFile = "D:\\회사업무_기타\\주간업무수행_2015\\SW2G_주간업무수행 양식-43주차_151019-SW5.docx"
+DefaultOpenFile = "D:\\회사업무_기타\\주간업무수행_2015\\SW2G_주간업무수행 양식-45주차_151102-SW5.docx"
 
 
 AllTeamMember = {}
