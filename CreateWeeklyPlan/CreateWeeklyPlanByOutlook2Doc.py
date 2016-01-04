@@ -10,21 +10,25 @@ from time import sleep
 from __builtin__ import True
 
 
-ReportDayOfWeek = "11/02/15"
-SubjectPrefix   = "[주간계획]".decode('cp949')
+ReportDayOfWeek = "01/04/16"
+SubjectPrefix   = "[주간계획세부사항]".decode('cp949')
 DefaultPostBox  = "sslee@ubiquoss.com"
-DefaultDisplay  = False
-DefaultOpenFile = "D:\\회사업무_기타\\주간업무수행_2015\\SW2G_주간업무수행 양식-45주차_151102-SW5.docx"
+DefaultDisplay  = True
+DefaultFolder   = "주간계획"
+DefaultOpenFile = "D:\\회사업무_기타\\주간업무수행_2016\\SW2G_주간업무수행 양식-01주차_160104-SW5.docx"
 
 
 AllTeamMember = {}
 
 def CreateTeamMemberListbyFile(DisplayOn = DefaultDisplay):
+    number = 0
+    
     try:
         with open('MemberOfTeam.txt', 'r') as  MemberOfTeam_file:
             for line in MemberOfTeam_file:
-                (number, name, rank) = line.decode('cp949').split()
-                AllTeamMember[number] = (name, rank)
+                (name, rank) = line.decode('cp949').split()
+                number = number + 1
+                AllTeamMember['{:0=2}'.format(number)] = (name, rank)
 
     except IOError as err:
         print('File error: ' + str(err))
@@ -48,11 +52,12 @@ def DisplayItem_OfficeOutlook(msg):
     return
 
 
-def OpenMailBox_OfficeOutlook(PostBox = DefaultPostBox, PersonalFolderName = "주간업무관련"):
+def OpenMailBox_OfficeOutlook(PostBox = DefaultPostBox, PersonalFolderName = DefaultFolder):
     global OfficeOutlook
     OfficeOutlook = win32.Dispatch("Outlook.Application")
     NameSpace = OfficeOutlook.GetNamespace("MAPI")
     PersonalFolder = NameSpace.Folders.Item(PostBox)
+    print PersonalFolder.Folders
     Inbox = PersonalFolder.Folders.Item(PersonalFolderName)
 
     return Inbox
